@@ -2,20 +2,19 @@ import streamlit as st
 import random
 import time
 
-st.set_page_config(page_title="Call Bell Test", page_icon="🔔", layout="centered")
-st.title("🔔 Call Bell Test")
+st.set_page_config(page_title="Universal Call Bell - Test 1", page_icon="🔔", layout="centered")
+st.title("🔔 Universal Call Bell - Test 1")
 
 if "press_list" not in st.session_state:
 	st.session_state.press_list = []
 
-# 1. Generate randomized list L of length 6 and show it
 if st.button("Generate List"):
 	L = random.sample(["P"] * 3 + ["N"] * 3, 6)
 	st.session_state.press_list = L
 	st.write("### Generated List")
-	st.table({"Index": list(range(1, 7)), "Press List": L})
+	rows = [{"Index": i + 1, "Press List": L[i]} for i in range(6)]
+	st.table(rows)
 
-# 2. Sequential live display
 if st.session_state.press_list and st.button("Start Experiment"):
 	st.write("### Running Experiment (1 minute total)")
 	for i, label in enumerate(st.session_state.press_list, 1):
