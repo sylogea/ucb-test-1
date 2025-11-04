@@ -5,10 +5,14 @@ from datetime import datetime
 from fpdf import FPDF
 from io import BytesIO
 
+def _rerun():
+	fn = getattr(st, "rerun", None) or getattr(st, "experimental_rerun", None)
+	if callable(fn):
+		fn()
+
 st.set_page_config(page_title="Universal Call Bell - Test 1", page_icon="🔔", layout="centered")
 st.title("")
 
-# initialize session state
 if "press_list" not in st.session_state:
 	st.session_state.press_list = random.sample(["P"] * 3 + ["N"] * 3, 6)
 if "results" not in st.session_state:
@@ -20,25 +24,18 @@ if "finished" not in st.session_state:
 if "stage" not in st.session_state:
 	st.session_state.stage = 1
 
-# layout: centered column
 _, center, _ = st.columns([1, 2, 1])
 
 with center:
-	# briefing shown only before start
 	if not st.session_state.started:
-		st.markdown("""
-- This test aims to check if the call bell works every time it should, and takes **1 minute**.
-- Please get ready to follow the instructions at each stage!
-""")
+		st.markdown("This test aims to check if the call bell works every time it should, and takes **1 minute**. Please get ready to follow the instructions at each stage!")
 
-	# Start button (hidden after clicked)
 	if not st.session_state.started and not st.session_state.finished:
 		if st.button("Start Test", use_container_width=True):
 			st.session_state.started = True
 			st.session_state.stage = 1
-			st.experimental_rerun()  # <- ensures briefing and button disappear immediately
+			_rerun()
 
-	# Active stage display (advances only when Next pressed)
 	if st.session_state.started and not st.session_state.finished:
 		i = st.session_state.stage
 		label = st.session_state.press_list[i - 1]
@@ -49,34 +46,28 @@ with center:
 		else:
 			st.warning("Ask the patient to **lie down, then sit back up naturally** now.")
 
-		# radio with no default selection
 		choice = st.radio(
-			"Select either **T** or **F**:",
+			"Select **T** if the bell activated, and **F** otherwise:",
 			["T", "F"],
 			index=None,
 			horizontal=True,
 			key=f"trial_{i}",
 		)
 
-		# Next button disabled until a choice is made
 		col1, col2, col3 = st.columns([1, 1, 1])
 		with col2:
 			if st.session_state.stage < 6:
 				if st.button("Next", use_container_width=True, disabled=(choice not in ("T", "F"))):
 					st.session_state.results[i - 1] = choice
 					st.session_state.stage += 1
-					st.experimental_rerun()
+					_rerun()
 			else:
-				# final step: Finish button
 				if st.button("Finish", use_container_width=True, disabled=(choice not in ("T", "F"))):
 					st.session_state.results[i - 1] = choice
 					st.session_state.finished = True
 					st.session_state.started = False
-					st.experimental_rerun()
+					_rerun()
 
-		st.caption("Advance when ready. Each stage is quick.")
-
-	# Finished: show mutually exclusive outcome and downloads
 	if st.session_state.finished:
 		complete = all(r in ("T", "F") for r in st.session_state.results)
 		if not complete:
@@ -89,7 +80,6 @@ with center:
 				index=[1, 2, 3, 4, 5, 6],
 			)
 
-			# timestamped filename prefix (HHMM)
 			now = datetime.now().strftime("%H%M")
 			filename_base = f"{now}-ucb-test-1"
 
