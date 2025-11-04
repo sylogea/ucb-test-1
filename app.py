@@ -36,6 +36,7 @@ with center:
 		if st.button("Start Test", use_container_width=True):
 			st.session_state.started = True
 			st.session_state.stage = 1
+			st.experimental_rerun()  # <- ensures briefing and button disappear immediately
 
 	# Active stage display (advances only when Next pressed)
 	if st.session_state.started and not st.session_state.finished:
@@ -64,7 +65,6 @@ with center:
 				if st.button("Next", use_container_width=True, disabled=(choice not in ("T", "F"))):
 					st.session_state.results[i - 1] = choice
 					st.session_state.stage += 1
-					# preserve previously selected answers if any
 					st.experimental_rerun()
 			else:
 				# final step: Finish button
