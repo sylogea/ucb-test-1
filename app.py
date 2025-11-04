@@ -12,10 +12,12 @@ if "press_list" not in st.session_state:
 	st.session_state.press_list = random.sample(["P"] * 3 + ["N"] * 3, 6)
 if "results" not in st.session_state:
 	st.session_state.results = [None] * 6
-if "finished" not in st.session_state:
-	st.session_state.finished = False
 if "started" not in st.session_state:
 	st.session_state.started = False
+if "finished" not in st.session_state:
+	st.session_state.finished = False
+if "start_time" not in st.session_state:
+	st.session_state.start_time = None
 
 _, center, _ = st.columns([1, 2, 1])
 
@@ -28,37 +30,49 @@ with center:
 - Please get ready to follow the instructions at each stage!
 """)
 
-	start_clicked = st.button("Start Test", use_container_width=True, disabled=st.session_state.finished)
-	if start_clicked:
-		st.session_state.started = True
-		brief.empty()
+	if not st.session_state.started and not st.session_state.finished:
+		if st.button("Start Test", use_container_width=True):
+			st.session_state.started = True
+			st.session_state.start_time = time.time()
+			brief.empty()
+			st.experimental_rerun()
 
+	# live step display driven by elapsed time
 	if st.session_state.started and not st.session_state.finished:
-		instruction = st.empty()
-		for i, label in enumerate(st.session_state.press_list, 1):
-			with instruction.container():
-				st.markdown(f"## Stage {i}/6")
-				if label == "P":
-					st.warning("Ask the patient to **activate the bell** now.")
-				else:
-					st.warning("Ask the patient to **lie down and sit back up naturally** now.")
-				st.session_state.results[i - 1] = st.radio(
-					"Select either **T** or **F**:",
-					["T", "F"],
-					horizontal=True,
-					index=None,
-					key=f"trial_{i}",
-				)
-				st.caption("Showing the next step in 10 seconds.")
-			time.sleep(10)
-		instruction.empty()
-		st.session_state.finished = True
-		st.success("The test is complete. Please download the results below.")
+		elapsed = time.time() - st.session_state.start_time
+		step = int(elapsed // 10) + 1
+		if step > 6:
+			st.session_state.finished = True
+			st.experimental_rerun()
 
+		label = st.session_state.press_list[step - 1]
+		placeholder = st.empty()
+		with placeholder.container():
+			st.markdown(f"## Stage {step}/6")
+			if label == "P":
+				st.warning("Ask the patient to **activate the bell** now.")
+			else:
+				st.warning("Ask the patient to **lie down, then sit back up naturally** now.")
+			# radio with no default selection
+			st.session_state.results[step - 1] = st.radio(
+				"Select either **T** or **F**:",
+				["T", "F"],
+				horizontal=True,
+				index=None,
+				key=f"trial_{step}",
+			)
+			remaining = 10 - int(elapsed % 10)
+			st.caption(f"Showing the next step in {remaining} seconds.")
+		time.sleep(1)
+		st.experimental_rerun()
+
+	# finished: mutually exclusive outcomes
 	if st.session_state.finished:
-		if any(r not in ("T", "F") for r in st.session_state.results):
-			st.error("The test failed: at least one step is missing a result. Please run the test again.")
+		complete = all(r in ("T", "F") for r in st.session_state.results)
+		if not complete:
+			st.error("The test failed: at least one stage is missing a result. Please run the test again.")
 		else:
+			st.success("The test is complete. Download the results below.")
 			df = pd.DataFrame(
 				{"Press List": st.session_state.press_list, "Activated?": st.session_state.results},
 				index=[1, 2, 3, 4, 5, 6],
@@ -67,6 +81,7 @@ with center:
 			now = datetime.now().strftime("%H%M")
 			filename_base = f"{now}-ucb-test-1"
 
+			# CSV
 			csv_buffer = BytesIO()
 			df.to_csv(csv_buffer, index=True)
 			st.download_button(
@@ -77,6 +92,7 @@ with center:
 				use_container_width=True,
 			)
 
+			# PDF
 			pdf = FPDF()
 			pdf.add_page()
 			pdf.set_font("Arial", "B", 14)
