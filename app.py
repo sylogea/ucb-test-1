@@ -1,7 +1,6 @@
-import streamlit as st
-import random
-import time
 import pandas as pd
+import streamlit as st
+import random, time
 from io import BytesIO
 from fpdf import FPDF
 
@@ -9,22 +8,12 @@ st.set_page_config(page_title="Universal Call Bell - Test 1", page_icon="🔔", 
 st.title("🔔 Universal Call Bell - Test 1")
 
 st.markdown("""
-### Before starting
-This test checks if the **call bell** works every time it should.
-
-It takes **about one minute**.
-
-The screen will show **6 steps**.  
-Each step lasts **10 seconds**.
-
-- When it says **press**, ask the patient to **activate the bell** once.  
-- When it says **no press**, ask the patient to **lie down and sit back up naturally**.  
-- After each step, tap **T** if the alarm or light comes on, or **F** if nothing happens.
-
-At the end, you can **download the results** as either a **CSV file** or a **PDF file**.
+### Briefing
+- This test aims to check if the call bell works every time it should, and takes **1 minute**.
+- Please get ready to follow the instructions at each step!
+- When the test ends, you will be able to download the results.
 """)
 
-# Setup
 if "press_list" not in st.session_state:
 	st.session_state.press_list = random.sample(["P"] * 3 + ["N"] * 3, 6)
 if "results" not in st.session_state:
@@ -32,7 +21,6 @@ if "results" not in st.session_state:
 if "finished" not in st.session_state:
 	st.session_state.finished = False
 
-# Run test
 if not st.session_state.finished and st.button("Start Test"):
 	placeholder = st.empty()
 	for i, label in enumerate(st.session_state.press_list, 1):
@@ -54,7 +42,6 @@ if not st.session_state.finished and st.button("Start Test"):
 	st.session_state.finished = True
 	st.success("All steps done. Download the results below.")
 
-# Download section
 if st.session_state.finished:
 	df = pd.DataFrame(
 		{"Press List": st.session_state.press_list, "Activated?": st.session_state.results},
