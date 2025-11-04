@@ -13,8 +13,8 @@ def _rerun():
 st.set_page_config(page_title="Universal Call Bell - Test 1", page_icon="🔔", layout="centered")
 st.title("")
 
-if "to_activate" not in st.session_state:
-	st.session_state.to_activate = random.sample(["T"] * 3 + ["F"] * 3, 6)
+if "should_activate" not in st.session_state:
+	st.session_state.should_activate = random.sample(["T"] * 3 + ["F"] * 3, 6)
 if "results" not in st.session_state:
 	st.session_state.results = [None] * 6
 if "started" not in st.session_state:
@@ -23,22 +23,25 @@ if "finished" not in st.session_state:
 	st.session_state.finished = False
 if "stage" not in st.session_state:
 	st.session_state.stage = 1
+if "patient_name" not in st.session_state:
+	st.session_state.patient_name = ""
 
 _, center, _ = st.columns([1, 2, 1])
 
 with center:
 	if (not st.session_state.started) and (not st.session_state.finished):
-		st.markdown("This test aims to check if the call bell works every time it should, and takes **1 minute**. Please get ready to follow the instructions at each stage!")
+		st.markdown("This test aims to check if the call bell works every time it should, and takes **1 minute**. Get ready to follow the instructions at each stage!")
+		st.session_state.patient_name = st.text_input("Enter a name for the patient...")
 
 	if (not st.session_state.started) and (not st.session_state.finished):
-		if st.button("Start Test", use_container_width=True):
+		if st.button("Start Test", use_container_width=True, disabled=not st.session_state.patient_name.strip()):
 			st.session_state.started = True
 			st.session_state.stage = 1
 			_rerun()
 
 	if st.session_state.started and (not st.session_state.finished):
 		i = st.session_state.stage
-		label = st.session_state.to_activate[i - 1]
+		label = st.session_state.should_activate[i - 1]
 
 		st.markdown(f"## Stage {i}/6")
 		if label == "T":
@@ -71,17 +74,17 @@ with center:
 	if st.session_state.finished:
 		complete = all(r in ("T", "F") for r in st.session_state.results)
 		if not complete:
-			st.error("The test failed: at least one stage is missing a result. Please run the test again.")
+			st.error("The test failed: at least one stage is missing a result. Please try again.")
 		else:
 			st.success("The test is complete. Please download the results.")
 
 			df = pd.DataFrame(
-				{"To Activate?": st.session_state.to_activate, "Activated?": st.session_state.results},
+				{"Should Activate?": st.session_state.should_activate, "Activated?": st.session_state.results},
 				index=[1, 2, 3, 4, 5, 6],
 			)
 
-			now = datetime.now().strftime("%H%M")
-			filename_base = f"{now}-ucb-test-1"
+			name = st.session_state.patient_name.strip().replace(" ", "_")
+			filename_base = f"{name or 'unknown'}-ucb-test-1"
 
 			csv_buffer = BytesIO()
 			df.to_csv(csv_buffer, index=True)
@@ -100,7 +103,7 @@ with center:
 			pdf.ln(10)
 			pdf.set_font("Arial", "", 12)
 			pdf.cell(30, 10, "Index", 1, 0, "C")
-			pdf.cell(60, 10, "To Activate?", 1, 0, "C")
+			pdf.cell(60, 10, "Should Activate?", 1, 0, "C")
 			pdf.cell(60, 10, "Activated?", 1, 1, "C")
 			for i in range(6):
 				pdf.cell(30, 10, str(i + 1), 1, 0, "C")
