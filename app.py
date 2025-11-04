@@ -12,8 +12,7 @@ if st.button("Generate List"):
 	L = random.sample(["P"] * 3 + ["N"] * 3, 6)
 	st.session_state.press_list = L
 	st.write("### Generated List")
-	rows = [{"Index": i + 1, "Press List": L[i]} for i in range(6)]
-	st.table(rows)
+	st.table({"Press List": L})
 
 if st.session_state.press_list and st.button("Start Experiment"):
 	st.write("### Running Experiment (1 minute total)")
