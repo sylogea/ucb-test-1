@@ -1,9 +1,9 @@
 import pandas as pd
 import streamlit as st
 import random, time
+from datetime import datetime
 from fpdf import FPDF
 from io import BytesIO
-from datetime import datetime
 
 st.set_page_config(page_title="Universal Call Bell - Test 1", page_icon="🔔", layout="centered")
 st.title("")
@@ -20,24 +20,30 @@ if "started" not in st.session_state:
 _, center, _ = st.columns([1, 2, 1])
 
 with center:
+	brief = st.empty()
 	if not st.session_state.started:
-		st.markdown("""
+		with brief.container():
+			st.markdown("""
 - This test aims to check if the call bell works every time it should, and takes **1 minute**.
 - Please get ready to follow the instructions at each stage!
 """)
 
-	if not st.session_state.finished and st.button("Start Test", use_container_width=True):
+	start_clicked = st.button("Start Test", use_container_width=True, disabled=st.session_state.finished)
+	if start_clicked:
 		st.session_state.started = True
-		placeholder = center.empty()
+		brief.empty()
+
+	if st.session_state.started and not st.session_state.finished:
+		instruction = st.empty()
 		for i, label in enumerate(st.session_state.press_list, 1):
-			with placeholder.container():
+			with instruction.container():
 				st.markdown(f"## Stage {i}/6")
 				if label == "P":
 					st.warning("Ask the patient to **activate the bell** now.")
 				else:
-					st.warning("Ask the patient to **lie down, then sit back up naturally** now.")
+					st.warning("Ask the patient to **lie down and sit back up naturally** now.")
 				st.session_state.results[i - 1] = st.radio(
-					"Select **T** if the bell activated, and **F** otherwise:",
+					"Select either **T** or **F**:",
 					["T", "F"],
 					horizontal=True,
 					index=None,
@@ -45,24 +51,22 @@ with center:
 				)
 				st.caption("Showing the next step in 10 seconds.")
 			time.sleep(10)
-		placeholder.empty()
+		instruction.empty()
 		st.session_state.finished = True
-		st.success("The test is complete! Please download the results below.")
+		st.success("The test is complete. Please download the results below.")
 
 	if st.session_state.finished:
 		if any(r not in ("T", "F") for r in st.session_state.results):
-			st.error("The test failed: at least one step is missing a result. Please try again.")
+			st.error("The test failed: at least one step is missing a result. Please run the test again.")
 		else:
 			df = pd.DataFrame(
 				{"Press List": st.session_state.press_list, "Activated?": st.session_state.results},
 				index=[1, 2, 3, 4, 5, 6],
 			)
 
-			# Generate timestamped filename prefix (HHMM)
 			now = datetime.now().strftime("%H%M")
 			filename_base = f"{now}-ucb-test-1"
 
-			# CSV
 			csv_buffer = BytesIO()
 			df.to_csv(csv_buffer, index=True)
 			st.download_button(
@@ -73,7 +77,6 @@ with center:
 				use_container_width=True,
 			)
 
-			# PDF
 			pdf = FPDF()
 			pdf.add_page()
 			pdf.set_font("Arial", "B", 14)
