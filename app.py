@@ -88,13 +88,6 @@ with center:
 
 			csv_buffer = BytesIO()
 			df.to_csv(csv_buffer, index=True)
-			st.download_button(
-				label="📥 Download CSV",
-				data=csv_buffer.getvalue(),
-				file_name=f"{filename_base}.csv",
-				mime="text/csv",
-				use_container_width=True,
-			)
 
 			pdf = FPDF()
 			pdf.add_page()
@@ -113,12 +106,22 @@ with center:
 			out = pdf.output(dest="S")
 			pdf_bytes = out.encode("latin-1") if isinstance(out, str) else bytes(out)
 
-			st.download_button(
-				label="📥 Download PDF",
-				data=pdf_bytes,
-				file_name=f"{filename_base}.pdf",
-				mime="application/pdf",
-				use_container_width=True,
-			)
+			col1, col2 = st.columns(2)
+			with col1:
+				st.download_button(
+					label="📥 Download CSV",
+					data=csv_buffer.getvalue(),
+					file_name=f"{filename_base}.csv",
+					mime="text/csv",
+					use_container_width=True,
+				)
+			with col2:
+				st.download_button(
+					label="📥 Download PDF",
+					data=pdf_bytes,
+					file_name=f"{filename_base}.pdf",
+					mime="application/pdf",
+					use_container_width=True,
+				)
 
 			st.dataframe(df, use_container_width=True)
