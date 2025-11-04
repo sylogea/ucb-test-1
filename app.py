@@ -13,6 +13,7 @@ def _rerun():
 st.set_page_config(page_title="Universal Call Bell - Test 1", page_icon="🔔", layout="centered")
 st.title("")
 
+# Session state
 if "press_list" not in st.session_state:
 	st.session_state.press_list = random.sample(["P"] * 3 + ["N"] * 3, 6)
 if "results" not in st.session_state:
@@ -24,19 +25,23 @@ if "finished" not in st.session_state:
 if "stage" not in st.session_state:
 	st.session_state.stage = 1
 
+# Center layout
 _, center, _ = st.columns([1, 2, 1])
 
 with center:
-	if not st.session_state.started:
+	# Briefing: show only before start, and never after finish
+	if (not st.session_state.started) and (not st.session_state.finished):
 		st.markdown("This test aims to check if the call bell works every time it should, and takes **1 minute**. Please get ready to follow the instructions at each stage!")
 
-	if not st.session_state.started and not st.session_state.finished:
+	# Start button: hidden after click
+	if (not st.session_state.started) and (not st.session_state.finished):
 		if st.button("Start Test", use_container_width=True):
 			st.session_state.started = True
 			st.session_state.stage = 1
 			_rerun()
 
-	if st.session_state.started and not st.session_state.finished:
+	# Active flow
+	if st.session_state.started and (not st.session_state.finished):
 		i = st.session_state.stage
 		label = st.session_state.press_list[i - 1]
 
@@ -68,12 +73,13 @@ with center:
 					st.session_state.started = False
 					_rerun()
 
+	# Completion & downloads (mutually exclusive with failure)
 	if st.session_state.finished:
 		complete = all(r in ("T", "F") for r in st.session_state.results)
 		if not complete:
 			st.error("The test failed: at least one stage is missing a result. Please run the test again.")
 		else:
-			st.success("The test is complete. Download the results below.")
+			st.success("The test is complete. Please download the results.")
 
 			df = pd.DataFrame(
 				{"Press List": st.session_state.press_list, "Activated?": st.session_state.results},
@@ -87,14 +93,14 @@ with center:
 			csv_buffer = BytesIO()
 			df.to_csv(csv_buffer, index=True)
 			st.download_button(
-				label="📥 Download as CSV",
+				label="📥 Download CSV",
 				data=csv_buffer.getvalue(),
 				file_name=f"{filename_base}.csv",
 				mime="text/csv",
 				use_container_width=True,
 			)
 
-			# PDF
+			# PDF (robust bytes handling across fpdf versions)
 			pdf = FPDF()
 			pdf.add_page()
 			pdf.set_font("Arial", "B", 14)
@@ -108,9 +114,15 @@ with center:
 				pdf.cell(30, 10, str(i + 1), 1, 0, "C")
 				pdf.cell(60, 10, str(df.iloc[i, 0]), 1, 0, "C")
 				pdf.cell(60, 10, str(df.iloc[i, 1]), 1, 1, "C")
-			pdf_bytes = pdf.output(dest="S")
+
+			out = pdf.output(dest="S")
+			if isinstance(out, str):
+				pdf_bytes = out.encode("latin-1")
+			else:
+				pdf_bytes = bytes(out)
+
 			st.download_button(
-				label="📥 Download as PDF",
+				label="📥 Download PDF",
 				data=pdf_bytes,
 				file_name=f"{filename_base}.pdf",
 				mime="application/pdf",
