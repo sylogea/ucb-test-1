@@ -3,6 +3,7 @@ import streamlit as st
 import random, time
 from fpdf import FPDF
 from io import BytesIO
+from datetime import datetime
 
 st.set_page_config(page_title="Universal Call Bell - Test 1", page_icon="🔔", layout="centered")
 st.title("")
@@ -57,13 +58,17 @@ with center:
 				index=[1, 2, 3, 4, 5, 6],
 			)
 
+			# Generate timestamped filename prefix (HHMM)
+			now = datetime.now().strftime("%H%M")
+			filename_base = f"{now}-ucb-test-1"
+
 			# CSV
 			csv_buffer = BytesIO()
 			df.to_csv(csv_buffer, index=True)
 			st.download_button(
 				label="📥 Download as CSV",
 				data=csv_buffer.getvalue(),
-				file_name="call_bell_test_results.csv",
+				file_name=f"{filename_base}.csv",
 				mime="text/csv",
 				use_container_width=True,
 			)
@@ -86,7 +91,7 @@ with center:
 			st.download_button(
 				label="📥 Download as PDF",
 				data=pdf_bytes,
-				file_name="call_bell_test_results.pdf",
+				file_name=f"{filename_base}.pdf",
 				mime="application/pdf",
 				use_container_width=True,
 			)
