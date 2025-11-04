@@ -1,7 +1,6 @@
 import pandas as pd
 import streamlit as st
 import random
-from datetime import datetime
 from fpdf import FPDF
 from io import BytesIO
 
@@ -83,17 +82,13 @@ with center:
 				index=[1, 2, 3, 4, 5, 6],
 			)
 
-			name = st.session_state.patient_name.strip().replace(" ", "_")
-			filename_base = f"{name or 'unknown'}-ucb-test-1"
+			filename_base = "ucb-test-1"
 
 			csv_buffer = BytesIO()
 			df.to_csv(csv_buffer, index=True)
 
 			pdf = FPDF()
 			pdf.add_page()
-			pdf.set_font("Arial", "B", 14)
-			pdf.cell(0, 10, "Universal Call Bell - Test 1 Results", ln=True, align="C")
-			pdf.ln(10)
 			pdf.set_font("Arial", "", 12)
 			pdf.cell(30, 10, "Index", 1, 0, "C")
 			pdf.cell(60, 10, "Should Activate?", 1, 0, "C")
