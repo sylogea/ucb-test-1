@@ -1,8 +1,8 @@
-import pandas as pd
-import streamlit as st
-import random
 from fpdf import FPDF
 from io import BytesIO
+import pandas as pd
+import random
+import streamlit as st
 
 def _rerun():
 	fn = getattr(st, "rerun", None) or getattr(st, "experimental_rerun", None)
@@ -46,7 +46,7 @@ with center:
 		if label == "T":
 			st.warning("Now, ask the patient to **activate the bell**.")
 		else:
-			st.warning("Now, ask the patient to **perform a natural action they are comfortable with**.") # lie down, then sit back up naturally
+			st.warning("Now, ask the patient to **perform a natural action they are comfortable with**.")
 
 		choice = st.radio(
 			"Select **T** if the bell activated, and **F** otherwise:",
@@ -82,7 +82,9 @@ with center:
 				index=[1, 2, 3, 4, 5, 6],
 			)
 
-			filename_base = "ucb-test-1"
+			name = st.session_state.patient_name.strip()
+			sanitized = "_".join("".join(ch for ch in name if ch.isalnum() or ch.isspace()).split())
+			filename_base = f"{sanitized}_ucb-test-1"
 
 			csv_buffer = BytesIO()
 			df.to_csv(csv_buffer, index=True)
