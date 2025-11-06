@@ -44,9 +44,9 @@ with center:
 
 		st.markdown(f"## Stage {i}/6")
 		if label == "T":
-			st.warning("Ask the patient to **activate the bell** now.")
+			st.warning("Now, ask the patient to **activate the bell**.")
 		else:
-			st.warning("Ask the patient to **lie down, then sit back up naturally** now.")
+			st.warning("Now, ask the patient to **perform a natural action they are comfortable with**.") # lie down, then sit back up naturally
 
 		choice = st.radio(
 			"Select **T** if the bell activated, and **F** otherwise:",
